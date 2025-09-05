@@ -1,0 +1,289 @@
+<@messages errors=errors warnings=warnings infos=infos />
+
+<#-- Freemarker macros -->
+<#macro searchTagsToolbar>
+    <div class='search-tags align-items-center mb-3'>
+        
+        <div>
+
+
+                <button label='Carte' class='outline toggle-listmap p-2'  type='button' params=' aria-pressed="false"'/>
+
+        </div>
+    </div>
+</#macro>
+
+
+
+${formsreponseedito.labelrichtextUn!''}
+
+<input type="hidden" id="display-map" name="display_map" value="${display_map!}">
+<#if points?? && (points?size > 0)>
+<div class='search-tags align-items-center mb-3'>
+        
+        <div>
+
+
+                <button label='Carte' class='outline toggle-listmap p-2'  type='button' params=' aria-pressed="false"'>Carte/liste</button>
+
+        </div>
+    </div>
+</#if>
+<div id="result-list" >
+<#list listFormResponsePaginator as formRep>
+	<#list formRep.steps as formQuestionResponseSteps>
+		<#list formQuestionResponseSteps.questions as questionResponse>
+			${questionResponse.question.title} : 
+	    	<#list questionResponse.entryResponse as response>
+	    		${response.responseValue!}
+	    	</#list>
+	    	</br>
+	    </#list>
+	</#list>
+</#list>
+
+<!-- Liens de pagination -->
+<div class="pagination">
+    <#if (paginator.pagesCount > 1) >
+        <#list 1..paginator.pagesCount as page>
+            <#if page == paginator.pageCurrent>
+                <strong>${page}</strong>
+            <#else>
+                <a href="${urlPaginator}&page_index=${page}">
+                    ${page}
+                </a>
+            </#if>
+        </#list>
+    </#if>
+</div>
+
+
+<form name="search" method="post" action="${urlPaginator}">
+            <div>
+                <#-- Number of documents per page selector -->
+                #i18n{portal.search.search_results.labelNbDocsPerPage}: 
+                <@NbItemsPerPageSelectorCombo nb_items_per_page?string />
+            </div>
+            <span>
+        	<input type="submit" value="soumettre" />
+	</span>
+        </form>
+
+</div>
+
+
+<script type="text/javascript">
+var loadresource = document.createElement('link');
+loadresource.setAttribute("rel", "stylesheet");
+loadresource.setAttribute("type", "text/css");
+loadresource.setAttribute("href", "js/plugins/leaflet/leaflet/leaflet.css");
+document.getElementsByTagName("head")[0].appendChild(loadresource);
+
+loadresource = document.createElement('link');
+loadresource.setAttribute("rel", "stylesheet");
+loadresource.setAttribute("type", "text/css");
+loadresource.setAttribute("href", "js/plugins/leaflet/leaflet/MarkerCluster.css");
+document.getElementsByTagName("head")[0].appendChild(loadresource);
+
+loadresource = document.createElement('link');
+loadresource.setAttribute("rel", "stylesheet");
+loadresource.setAttribute("type", "text/css");
+loadresource.setAttribute("href", "js/plugins/leaflet/leaflet/MarkerCluster.Default.css");
+document.getElementsByTagName("head")[0].appendChild(loadresource);
+</script>
+
+<script src = "js/plugins/leaflet/leaflet/leaflet.js"></script>
+<script src="js/plugins/leaflet/leaflet/leaflet.markercluster.js"></script>
+
+<script type="text/javascript">
+$(window).on('load', function () {
+var map = L.map('map').setView([48.85632, 2.33272], 12);
+var points = [
+            <#list points as point>
+            {
+                "type": "${point.type}",
+                "code": "${point.code}",
+                "id": "${point.id}",
+                "geojson": ${point.geojson},
+                "datalayertitle" : "${point.data_layer_title}",
+                "datalayerpopup" : "${point.data_layer_popup!' '}",
+                "idPicto" : "${point.layer_properties.iconImage!""}"
+            }<#if point_has_next>,</#if>
+            </#list>
+        ];
+
+
+// create the tile layer with correct attribution
+var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+var osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+var osm = new L.TileLayer(osmUrl, {minZoom: 8, maxZoom: 16, attribution: osmAttrib}).addTo(map);
+
+var marker_clusters = {};
+var marker_icons = {};
+
+//Workardound https://github.com/Leaflet/Leaflet/issues/3696
+var defaultIcon = L.Icon.extend({
+    options: {
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+        shadowUrl: L.Icon.Default.imagePath + '/marker-shadow.png'
+    }
+});
+var greenIcon = new defaultIcon({
+    iconUrl: L.Icon.Default.imagePath + '/marker-icon-green.png',
+    iconRetinaUrl: L.Icon.Default.imagePath + '/marker-icon-green-2x.png',
+});
+var yellowIcon = new defaultIcon({
+     iconUrl: L.Icon.Default.imagePath + '/marker-icon-yellow.png',
+     iconRetinaUrl: L.Icon.Default.imagePath + '/marker-icon-yellow-2x.png'
+});
+var redIcon = new defaultIcon({
+    iconUrl: L.Icon.Default.imagePath + '/marker-icon-red.png',
+    iconRetinaUrl: L.Icon.Default.imagePath + '/marker-icon-red-2x.png'
+});
+var createGreenCluster = function (cluster) {
+    var childCount = cluster.getChildCount();
+    return new L.DivIcon({ html: '<div><span>' + childCount + '</span></div>', className: 'marker-cluster marker-cluster-small', iconSize: new L.Point(40, 40) });
+};
+var createYellowCluster = function (cluster) {
+    var childCount = cluster.getChildCount();
+    return new L.DivIcon({ html: '<div><span>' + childCount + '</span></div>', className: 'marker-cluster marker-cluster-medium', iconSize: new L.Point(40, 40) });
+};
+var createRedCluster = function (cluster) {
+    var childCount = cluster.getChildCount();
+    return new L.DivIcon({ html: '<div><span>' + childCount + '</span></div>', className: 'marker-cluster marker-cluster-large', iconSize: new L.Point(40, 40) });
+};
+
+for (var i = 0; i < points.length; i++) {
+            var markers = undefined;
+            var icon = undefined;
+            var layer = "";
+            var popupContent = undefined;
+            
+          	//Image icone
+            var idPictoUrl = points[i]["idPicto"];
+            if ( idPictoUrl != null && idPictoUrl != '' )
+            {
+            	fontAwesomeIcon = L.icon({
+				    iconUrl: "image?id="+ idPictoUrl + "&resource_type=public_image_resource",
+				    iconSize: [28, 88],
+				    className: 'myDivIcon'
+				});
+	    	}
+
+            var properties = points[i]["geojson"]["properties"];
+            if (typeof(properties) != 'undefined') {
+                layer = properties["layer"];
+            }
+            if (!layer) {
+                layer = points[i]["datalayertitle"];
+            }
+            if (typeof(marker_clusters[layer]) != "undefined") {
+                markers = marker_clusters[layer];
+                icon    = marker_icons[layer];
+            } else {
+                if (typeof(properties) != 'undefined' && typeof(properties["icon"]) != 'undefined') {
+                    var clusterIconCreateFunction = undefined;
+                    if (properties["icon"] == 'red' ) {
+                        icon = redIcon;
+                        clusterIconCreateFunction = createRedCluster;
+                    } else if (properties["icon"] == 'green' ) {
+                        icon = greenIcon;
+                        clusterIconCreateFunction = createGreenCluster;
+                    } else if (properties["icon"] == 'yellow' ) {
+                        icon = yellowIcon;
+                        clusterIconCreateFunction = createYellowCluster;
+                    }
+
+                    if (typeof(clusterIconCreateFunction) != 'undefined') {
+                        markers = new L.MarkerClusterGroup({
+                            iconCreateFunction: clusterIconCreateFunction
+                        });
+                    }
+                }
+
+                if (typeof(icon) == 'undefined') {
+                    markers = new L.MarkerClusterGroup();
+                    icon = new L.Icon.Default();
+                }
+
+                marker_clusters[layer] = markers;
+                marker_icons[layer] = icon;
+            }
+
+			var marker;
+            
+            if ( points[i]["geojson"]["geometry"]["type"] == "Point" ) {
+            	marker = L.marker([points[i]["geojson"]["geometry"]["coordinates"][1],points[i]["geojson"]["geometry"]["coordinates"][0]] ,{icon: fontAwesomeIcon});
+            }
+            else if ( points[i]["geojson"]["geometry"]["type"] == "Polygon" ) {
+                
+            	var aPolygon = points[i]["geojson"]["geometry"]["coordinates"];
+	    		marker = L.polygon(aPolygon, {color: points[i]["colorPolygon"], weight: points[i]["weight"] } );
+            }
+            else if ( points[i]["geojson"]["geometry"]["type"] == "Polyline" ) {
+              	 var coordPolyline = points[i]["geojson"]["geometry"]["coordinates"];
+              	marker = L.polyline(coordPolyline );
+            }
+
+            marker.bindPopup( points[i]["datalayerpopup"] );
+
+            markers.addLayer(marker);
+        }
+        for (var markers in marker_clusters) {
+            if (marker_clusters.hasOwnProperty(markers)) {
+                map.addLayer(marker_clusters[markers]);
+            }
+        }
+
+var baseMaps = {
+  "osm": osm
+};
+var overlayMaps = marker_clusters;
+// paramétrage et ajout du L.control.layers à la carte
+L.control.layers(baseMaps, overlayMaps).addTo(map);
+});
+
+
+
+
+
+<#if points?? && (points?size > 0)>
+$('.toggle-listmap').on('click', function () {
+
+
+            $('#result-list').toggle();
+            //$('#map-wrapper').toggleClass('map-absolute');
+            $('#map-wrapper').toggle();
+            // Send event to resize Map and center it
+            window.dispatchEvent(new Event('resize'))
+        });
+
+
+
+
+
+  </script>
+  
+  <div id='map-wrapper' class='map-absolute' style="display: none">
+  <div id="map" style="height: 400px; width: 100%"></div>
+  </div>
+</#if> 
+  
+${formsreponseedito.labelrichtextDeux!''}
+
+<#-- Number of items per page selector - Combo Box implementation -->
+<#macro NbItemsPerPageSelectorCombo nb_items_per_page>
+<select name="items_per_page">
+    <#list [ "10" , "20" , "50" , "100" ] as nb>
+    <#if nb_items_per_page = nb >
+    <option selected="selected" value="${nb}">${nb}</option>
+    <#else>
+    <option value="${nb}">${nb}</option>
+    </#if>
+    </#list>
+</select>
+</#macro>
+  

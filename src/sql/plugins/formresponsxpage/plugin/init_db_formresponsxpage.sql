@@ -1,0 +1,1 @@
+insert into formresponsxpage_formsreponseedito (labelrichtext_un, labelrichtext_deux) values ('<p> test1 </p>', '<p> test2 </p>');
