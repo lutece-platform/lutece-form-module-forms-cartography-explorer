@@ -31,6 +31,7 @@ ${formsreponseedito.labelrichtextUn!''}
 </#if>
 <div id="result-list" >
 <#list listFormResponsePaginator as formRep>
+	URL de la formresponse : <a href="jsp/site/Portal.jsp?page=formsResponse&view=formResponseView&id_response=${formRep.id}">Lien a cliquer</a>
 	<#list formRep.steps as formQuestionResponseSteps>
 		<#list formQuestionResponseSteps.questions as questionResponse>
 			${questionResponse.question.title} : 
