@@ -15,7 +15,7 @@
 
 
 
-${formsreponseedito.labelrichtextUn!''}
+<div id="richtext1" class="mb-4">${formsreponseedito.labelrichtextUn!''}</div>
 
 <input type="hidden" id="display-map" name="display_map" value="${display_map!}">
 <#if points?? && (points?size > 0)>
@@ -29,34 +29,47 @@ ${formsreponseedito.labelrichtextUn!''}
         </div>
     </div>
 </#if>
-<div id="result-list" >
+<div id="result-list" class="row row-cols-md-2 row-cols-lg-3 g-3 mb-5">
 <#list listFormResponsePaginator as formRep>
-	URL de la formresponse : <a href="jsp/site/Portal.jsp?page=formsResponse&view=formResponseView&id_response=${formRep.id}">Lien a cliquer</a>
-	<#list formRep.steps as formQuestionResponseSteps>
-		<#list formQuestionResponseSteps.questions as questionResponse>
-			${questionResponse.question.title} : 
-	    	<#list questionResponse.entryResponse as response>
-	    		${response.responseValue!}
-	    	</#list>
-	    	</br>
-	    </#list>
-	</#list>
+    <div class="col">
+        <div class="card h-100 border-primary">
+            <div class="card-body">
+                <span class="card-text mb-2">#${formRep.id}</span>
+                <#list formRep.steps as formQuestionResponseSteps>
+                    <#list formQuestionResponseSteps.questions as questionResponse>
+                        <h5 class="card-title text-primary">${questionResponse.question.title}</h5>
+                        <ul class="list-group list-group-flush">
+                        <#list questionResponse.entryResponse as response>
+                            <li class="list-group-item">${response.responseValue!}</li>
+                        </#list>
+                        </ul>
+                    </#list>
+                </#list>
+                <div class="text-right d-flex justify-content-end mt-3">
+                    <a href="jsp/site/Portal.jsp?page=formsResponse&view=formResponseView&id_response=${formRep.id}" class="btn btn-primary">Voir</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </#list>
+</div>
 
 <!-- Liens de pagination -->
-<div class="pagination">
+<nav aria-label="Pagination" class="mt-5">
+    <ul class="pagination pagination-lg justify-content-center">
     <#if (paginator.pagesCount > 1) >
         <#list 1..paginator.pagesCount as page>
             <#if page == paginator.pageCurrent>
-                <strong>${page}</strong>
+                <li class="page-item active"><a class="page-link" aria-current="page">${page}</a></li>
             <#else>
-                <a href="${urlPaginator}&page_index=${page}">
+                <li class="page-item"><a class="page-link" href="${urlPaginator}&page_index=${page}">
                     ${page}
-                </a>
+                </a></li>
             </#if>
         </#list>
     </#if>
-</div>
+    </ul>
+</nav>
 
 
 <form name="search" method="post" action="${urlPaginator}">
