@@ -3,86 +3,71 @@
 <#-- Freemarker macros -->
 <#macro searchTagsToolbar>
     <div class='search-tags align-items-center mb-3'>
-        
         <div>
-
-
-                <button label='Carte' class='outline toggle-listmap p-2'  type='button' params=' aria-pressed="false"'/>
-
+            <button label='Carte' class='outline toggle-listmap p-2'  type='button' params=' aria-pressed="false"'/>
         </div>
     </div>
 </#macro>
-
-
 
 <div id="richtext1" class="mb-4">${formsreponseedito.labelrichtextUn!''}</div>
 
 <input type="hidden" id="display-map" name="display_map" value="${display_map!}">
 <#if points?? && (points?size > 0)>
-<div class='search-tags align-items-center mb-3'>
-        
+    <div class='search-tags align-items-center mb-3'>
         <div>
-
-
-                <button label='Carte' class='outline toggle-listmap p-2'  type='button' params=' aria-pressed="false"'>Carte/liste</button>
-
+            <button label="Liste" class="btn btn-primary btn-sm active toggle-listmap p-2" type='button' aria-pressed="false" id="btn-list">Liste</button>
+            <button label="Carte" class="btn btn-primary btn-sm toggle-listmap p-2" type="button" aria-pressed="false" id="btn-map">Carte</button>
         </div>
     </div>
 </#if>
-<div id="result-list" class="row row-cols-md-2 row-cols-lg-3 g-3 mb-5">
-<#list listFormResponsePaginator as formRep>
-    <div class="col">
-        <div class="card h-100 border-primary">
-            <div class="card-body">
-                <span class="card-text mb-2">#${formRep.id}</span>
-                <#list formRep.steps as formQuestionResponseSteps>
-                    <#list formQuestionResponseSteps.questions as questionResponse>
-                        <h5 class="card-title text-primary">${questionResponse.question.title}</h5>
-                        <ul class="list-group list-group-flush">
-                        <#list questionResponse.entryResponse as response>
-                            <li class="list-group-item">${response.responseValue!}</li>
+
+<div id="result-list">
+    <form name="search" method="post" action="${urlPaginator}">
+        <div class="input-group mb-3">
+            <@NbItemsPerPageSelectorCombo nb_items_per_page?string />
+            <button class="btn btn-outline-primary btn-sm" type="submit" id="btn_items_per_page">#i18n{portal.admin.message.buttonValidate}</button>
+        </div>
+    </form>
+    <div class="row row-cols-md-2 row-cols-lg-3 g-3 mb-5">
+    <#list listFormResponsePaginator as formRep>
+        <div class="col">
+            <div class="card border-secondary h-100">
+                <div class="card-body">
+                    <span class="card-text mb-2">#${formRep.id}</span>
+                    <#list formRep.steps as formQuestionResponseSteps>
+                        <#list formQuestionResponseSteps.questions as questionResponse>
+                            <h5 class="card-title text-primary">${questionResponse.question.title}</h5>
+                            <ul class="list-group list-group-flush">
+                            <#list questionResponse.entryResponse as response>
+                                <li class="list-group-item">${response.responseValue!}</li>
+                            </#list>
+                            </ul>
                         </#list>
-                        </ul>
                     </#list>
-                </#list>
-                <div class="text-right d-flex justify-content-end mt-3">
-                    <a href="jsp/site/Portal.jsp?page=formsResponse&view=formResponseView&id_response=${formRep.id}" class="btn btn-primary">Voir</a>
+                    <div class="text-right d-flex justify-content-end mt-3">
+                        <a href="jsp/site/Portal.jsp?page=formsResponse&view=formResponseView&id_response=${formRep.id}" class="btn btn-primary">Voir</a>
+                    </div>
                 </div>
             </div>
         </div>
+    </#list>
     </div>
-</#list>
-</div>
-
-<!-- Liens de pagination -->
-<nav aria-label="Pagination" class="mt-5">
-    <ul class="pagination pagination-lg justify-content-center">
-    <#if (paginator.pagesCount > 1) >
-        <#list 1..paginator.pagesCount as page>
-            <#if page == paginator.pageCurrent>
-                <li class="page-item active"><a class="page-link" aria-current="page">${page}</a></li>
-            <#else>
-                <li class="page-item"><a class="page-link" href="${urlPaginator}&page_index=${page}">
-                    ${page}
-                </a></li>
-            </#if>
-        </#list>
-    </#if>
-    </ul>
-</nav>
-
-
-<form name="search" method="post" action="${urlPaginator}">
-            <div>
-                <#-- Number of documents per page selector -->
-                #i18n{portal.search.search_results.labelNbDocsPerPage}: 
-                <@NbItemsPerPageSelectorCombo nb_items_per_page?string />
-            </div>
-            <span>
-        	<input type="submit" value="soumettre" />
-	</span>
-        </form>
-
+    <!-- Liens de pagination -->
+    <nav aria-label="Pagination" class="mt-5">
+        <ul class="pagination pagination-lg justify-content-center">
+        <#if (paginator.pagesCount > 1) >
+            <#list 1..paginator.pagesCount as page>
+                <#if page == paginator.pageCurrent>
+                    <li class="page-item active"><a class="page-link" aria-current="page">${page}</a></li>
+                <#else>
+                    <li class="page-item"><a class="page-link" href="${urlPaginator}&page_index=${page}">
+                        ${page}
+                    </a></li>
+                </#if>
+            </#list>
+        </#if>
+        </ul>
+    </nav>
 </div>
 
 
@@ -109,7 +94,7 @@ document.getElementsByTagName("head")[0].appendChild(loadresource);
 <script src = "js/plugins/leaflet/leaflet/leaflet.js"></script>
 <script src="js/plugins/leaflet/leaflet/leaflet.markercluster.js"></script>
 
-<script type="text/javascript">
+<script>
 $(window).on('load', function () {
 var map = L.map('map').setView([48.85632, 2.33272], 12);
 var points = [
@@ -259,45 +244,50 @@ var overlayMaps = marker_clusters;
 // paramétrage et ajout du L.control.layers à la carte
 L.control.layers(baseMaps, overlayMaps).addTo(map);
 });
-
-
-
-
+</script>
 
 <#if points?? && (points?size > 0)>
-$('.toggle-listmap').on('click', function () {
-
-
-            $('#result-list').toggle();
-            //$('#map-wrapper').toggleClass('map-absolute');
-            $('#map-wrapper').toggle();
-            // Send event to resize Map and center it
-            window.dispatchEvent(new Event('resize'))
-        });
-
-
-
-
-
-  </script>
+<script>
+    // Bouton Liste - Affiche la liste et cache la carte
+    $('#btn-list').on('click', function () {
+        $('#result-list').show();
+        $('#map-wrapper').hide();
+        $('#btn-map').removeClass("active");
+        $(this).addClass("active");
+    });
+    
+    // Bouton Carte - Affiche la carte et cache la liste
+    $('#btn-map').on('click', function () {
+        $('#result-list').hide();
+        $('#map-wrapper').show();
+        $('#btn-list').removeClass("active");
+        $(this).addClass("active");
+        // Send event to resize Map and center it
+        setTimeout(function() {
+            window.dispatchEvent(new Event('resize'));
+        }, 100);
+    });
+</script>
   
-  <div id='map-wrapper' class='map-absolute' style="display: none">
-  <div id="map" style="height: 400px; width: 100%"></div>
-  </div>
+<div id='map-wrapper' class='map-absolute' style="display: none">
+    <div id="map" style="height: 400px; width: 100%"></div>
+</div>
 </#if> 
   
-${formsreponseedito.labelrichtextDeux!''}
+<div class="my-5">${formsreponseedito.labelrichtextDeux!''}</div>
 
 <#-- Number of items per page selector - Combo Box implementation -->
 <#macro NbItemsPerPageSelectorCombo nb_items_per_page>
-<select name="items_per_page">
-    <#list [ "10" , "20" , "50" , "100" ] as nb>
-    <#if nb_items_per_page = nb >
-    <option selected="selected" value="${nb}">${nb}</option>
-    <#else>
-    <option value="${nb}">${nb}</option>
-    </#if>
-    </#list>
-</select>
+<div class="form-floating">
+    <select name="items_per_page" class="form-select form-select-sm" id="items_per_page" aria-label="#i18n{portal.search.search_results.labelNbDocsPerPage}">
+        <#list [ "10" , "20" , "50" , "100" ] as nb>
+        <#if nb_items_per_page = nb >
+        <option selected="selected" value="${nb}">${nb}</option>
+        <#else>
+        <option value="${nb}">${nb}</option>
+        </#if>
+        </#list>
+    </select>
+    <label for="items_per_page">#i18n{portal.search.search_results.labelNbDocsPerPage}</label>
+</div>
 </#macro>
-  
