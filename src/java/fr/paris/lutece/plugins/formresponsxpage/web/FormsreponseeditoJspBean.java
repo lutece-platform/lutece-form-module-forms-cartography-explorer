@@ -74,8 +74,7 @@ public class FormsreponseeditoJspBean extends AbstractJspBean <Integer, Formsrep
 		
     // Templates
     private static final String TEMPLATE_MANAGE_FORMSREPONSEEDITOS = "/admin/plugins/formresponsxpage/manage_formsreponseeditos.html";
-    private static final String TEMPLATE_CREATE_FORMSREPONSEEDITO = "/admin/plugins/formresponsxpage/create_formsreponseedito.html";
-    private static final String TEMPLATE_MODIFY_FORMSREPONSEEDITO = "/admin/plugins/formresponsxpage/modify_formsreponseedito.html";
+    private static final String TEMPLATE_MODIFY_FORMSREPONSEEDITO = "/admin/plugins/forms/modules/formresponseexplorer/modify_formsreponseedito.html";
 
     // Parameters
     private static final String PARAMETER_ID_FORMSREPONSEEDITO = "id";

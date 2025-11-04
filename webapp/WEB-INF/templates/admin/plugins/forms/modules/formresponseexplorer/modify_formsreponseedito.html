@@ -1,0 +1,28 @@
+<#include "/admin/util/editor/editor.html" />
+
+<@box>
+	<@boxHeader title='#i18n{formresponsxpage.modify_formsreponseedito.title}' />
+	<@boxBody>
+    <@tform class="form-horizontal" method="post" name="formsreponseedito" action="jsp/admin/plugins/formresponsxpage/ManageFormsreponseeditos.jsp" >
+			<@messages errors=errors />
+			<@input type="hidden" id="id" name="id" value="${formsreponseedito.id}"/>
+			<@input type="hidden" value="${token}" name="token" />
+			
+			<@formGroup labelFor='labelrichtext_un' labelKey='#i18n{formresponsxpage.formsreponseedito.labelLabelrichtextUn}' mandatory=true>
+				<@input type='textarea' rows=15 cols=70 richtext=true id='labelrichtext_un' name='labelrichtext_un'  value=formsreponseedito.labelrichtextUn!'' />
+			</@formGroup>
+			<@formGroup labelFor='labelrichtext_un' labelKey='Corps de la page' >
+				<@input type='textarea' disabled=true rows=15 cols=70 id='labelrichtext_median' name='labelrichtext_median'  value='Tableau des formsresponse
+				 -FormsResponse1
+				 -FormsResponse2
+				 -etc.
+				 ' />
+			</@formGroup>
+			<@formGroup labelFor='labelrichtext_deux' labelKey='#i18n{formresponsxpage.formsreponseedito.labelLabelrichtextDeux}' mandatory=true>
+				<@input type='textarea' rows=15 cols=70 richtext=true id='labelrichtext_deux' name='labelrichtext_deux'  value=formsreponseedito.labelrichtextDeux!'' />
+			</@formGroup>
+        <@actionButtons button1Name="action_modifyFormsreponseedito" button2Name="view_manageFormsreponseedito"/>
+    </@tform>
+	</@boxBody>
+</@box>
+<@initEditor/>

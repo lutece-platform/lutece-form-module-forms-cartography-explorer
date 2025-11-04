@@ -56,6 +56,7 @@ import fr.paris.lutece.plugins.forms.web.entrytype.IEntryDisplayService;
 import fr.paris.lutece.plugins.genericattributes.business.Response;
 import fr.paris.lutece.plugins.leaflet.business.GeolocItem;
 import fr.paris.lutece.plugins.leaflet.service.IconService;
+import fr.paris.lutece.plugins.search.solr.business.SolrFacetedResult;
 import fr.paris.lutece.plugins.search.solr.business.SolrSearchEngine;
 import fr.paris.lutece.plugins.search.solr.business.SolrSearchResult;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrItem;
@@ -148,10 +149,7 @@ public class FormsResponseEditoXPage extends MVCApplication
     private static final String ACTION_SAVE_TASK_FORM = "doSaveTaskForm";
 
     // Templates
-    private static final String TEMPLATE_VIEW_FORM_RESPONSE = "/skin/plugins/forms/view_form_response.html";
-    private static final String TEMPLATE_VIEW_FORM_FILE = "/skin/plugins/forms/view_form_file.html";
-    private static final String TEMPLATE_TASK_FORM_RESPONSE = "/skin/plugins/forms/task_form_workflow.html";
-    private static final String TEMPLATE_VIEW_LIST_FORM_RESPONSES = "/skin/formresponsesedito/view_list_form_responses.html";
+    private static final String TEMPLATE_VIEW_LIST_FORM_RESPONSES = "skin/plugins/forms/modules/formresponseexplorer/view_list_form_responses.html";
 
     // Marks
     private static final String MARK_WORKFLOW_ACTION_LIST = "workflow_action_list";
@@ -181,32 +179,9 @@ public class FormsResponseEditoXPage extends MVCApplication
 
     // Parameters
     private static final String PARAMETER_ID_ACTION = "id_action";
-
-    @View( value = VIEW_FORM_RESPONSE, defaultView = true )
-    public XPage getFormResponseView( HttpServletRequest request ) throws SiteMessageException
-    {
-        Locale locale = getLocale( request );
-        FormResponse formResponse = findFormResponseFrom( request );
-
-        Collection<Action> actionsList = getActionsForUser( request, formResponse );
-        if("true".equals(request.getParameter(FormsConstants.PARAMETER_ACTION_SUCCESS)))
-        {
-            addInfo( MESSAGE_ACTION_SUCCESS,getLocale(request) );
-        }
-        Map<String, Object> model = getModel( );
-        model.put( FormsConstants.MARK_FORM_RESPONSE, formResponse );
-        model.put( MARK_WORKFLOW_ACTION_LIST, actionsList );
-        model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_PROCESS_ACTION ) );
-
-        XPage xPage = getXPage( TEMPLATE_VIEW_FORM_RESPONSE, getLocale( request ), model );
-        xPage.setTitle( I18nService.getLocalizedString( MESSAGE_FORM_RESPONSE_PAGETITLE, locale ) );
-        xPage.setPathLabel( I18nService.getLocalizedString( MESSAGE_FORM_RESPONSE_PATHLABEL, locale ) );
-
-        return xPage;
-    }
     
     //NLG
-    @View( value = VIEW_FORM_LIST_RESPONSES, defaultView = false )
+    @View( value = VIEW_FORM_LIST_RESPONSES, defaultView = true )
     public XPage getFormListeResponsesView( HttpServletRequest request ) throws SiteMessageException
     {
         Locale locale = getLocale( request );
@@ -225,8 +200,13 @@ public class FormsResponseEditoXPage extends MVCApplication
         {
         	List<SolrSearchResult> listResultsGeoloc = null;
         	listResultsGeoloc = engine.getGeolocSearchResults( PARAMETER_SOLR_GEOJSON + ":" + datalayer.getSolrTag( ), null, 100 );
+        	SolrFacetedResult facetedSearchResults = engine.getFacetedSearchResults( PARAMETER_SOLR_GEOJSON + ":" + datalayer.getSolrTag( ), null, "DataLayer_text", "desc", 100, 1, 100, false);
+        	
+        	List<SolrSearchResult> solrSearchResults = facetedSearchResults.getSolrSearchResults();
+        	
+        	
             Optional<DataLayerMapTemplate> dataLayerMapTemplate = DataLayerMapTemplateHome.findByIdMapKeyIdDataLayerKey( xpageFrontOfficeMapTemplate.get().getId( ), datalayer.getId( ) );
-        	points.addAll( CartographyService.getGeolocModel( listResultsGeoloc, datalayer, dataLayerMapTemplate.get( ) ) );
+        	points.addAll( CartographyService.getGeolocModel( solrSearchResults, datalayer, dataLayerMapTemplate.get( ) ) );
         }
                 
         // paginator & session related elements
@@ -274,228 +254,4 @@ public class FormsResponseEditoXPage extends MVCApplication
         return xPage;
     }
     
-
-    @View( value = VIEW_FORM_FILE, defaultView = false )
-    public XPage getFormFileView( HttpServletRequest request ) throws SiteMessageException
-    {
-        Locale locale = getLocale( request );
-        FormResponse formResponse = findFormResponseFrom( request );
-        List<Response> listResponse = new ArrayList<Response>();
-        if("true".equals(request.getParameter(FormsConstants.PARAMETER_ACTION_SUCCESS)))
-        {
-            addInfo( MESSAGE_ACTION_SUCCESS,getLocale(request) );
-        }
-        Map<String, Object> model = getModel( );
-        model.put( FormsConstants.MARK_FORM_RESPONSE, formResponse );
-        model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_PROCESS_ACTION ) );
-        for (FormResponseStep step: formResponse.getSteps() ){
-            listResponse.addAll(findResponses(step.getQuestions()));
-        }
-        model.put( FormsConstants.MARK_QUESTION_LIST_RESPONSES, listResponse );
-
-        formResponse.getSteps().stream()
-                .flatMap(step -> step.getQuestions().stream())
-                .forEach(fqr -> {
-                    IEntryDisplayService displayService = EntryServiceManager.getInstance()
-                            .getEntryDisplayService(fqr.getQuestion().getEntry().getEntryType());
-                    if (displayService instanceof EntryTypeFileDisplayService) {
-                        displayService.getEntryTemplateDisplay(request, fqr.getQuestion().getEntry(), locale, model, DisplayType.READONLY_FRONTOFFICE);
-                    }
-                });
-
-        List<File> listFiles = formResponse.getSteps().stream()
-                .flatMap(step -> step.getQuestions().stream())
-                .filter(fqr -> fqr.getQuestion().getEntry().isOnlyDisplayInBack())
-                .flatMap(fqr -> fqr.getEntryResponse().stream())
-                .map(Response::getFile)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        model.put( MARK_LIST_FILE, listFiles );
-        XPage xPage = getXPage( TEMPLATE_VIEW_FORM_FILE, getLocale( request ), model );
-        xPage.setTitle( I18nService.getLocalizedString( MESSAGE_FORM_RESPONSE_PAGETITLE, locale ) );
-        xPage.setPathLabel( I18nService.getLocalizedString( MESSAGE_FORM_RESPONSE_PATHLABEL, locale ) );
-
-        return xPage;
-    }
-
-    @fr.paris.lutece.portal.util.mvc.commons.annotations.Action( value = ACTION_PROCESS_ACTION )
-    public XPage doProcessAction( HttpServletRequest request ) throws AccessDeniedException
-    {
-        // CSRF Token control
-        if ( !SecurityTokenService.getInstance( ).validate( request, ACTION_PROCESS_ACTION ) )
-        {
-            throw new AccessDeniedException( MESSAGE_ERROR_TOKEN );
-        }
-        // Get parameters from request
-        int nIdFormResponse = NumberUtils.toInt( request.getParameter( FormsConstants.PARAMETER_ID_RESPONSE ), NumberUtils.INTEGER_MINUS_ONE );
-        int nIdAction = NumberUtils.toInt( request.getParameter( PARAMETER_ID_ACTION ), NumberUtils.INTEGER_MINUS_ONE );
-
-        LuteceUser user = SecurityService.getInstance( ).getRegisteredUser( request );
-        FormResponse formResponse = FormResponseHome.findByPrimaryKey( nIdFormResponse );
-
-        if (  formResponse == null || !FormsResponseUtils.isAuthorized(formResponse, user) )
-        {
-            return redirect( request, VIEW_FORM_RESPONSE, FormsConstants.PARAMETER_ID_RESPONSE, nIdFormResponse );
-        }
-
-        Locale locale = getLocale( request );
-        WorkflowService workflowService = WorkflowService.getInstance( );
-        if ( workflowService.isDisplayTasksForm( nIdAction, locale ) )
-        {
-            FormsAsynchronousUploadHandler.getHandler( ).removeSessionFiles( request.getSession( ) );
-
-            String strHtmlTasksForm = WorkflowService.getInstance( ).getDisplayTasksForm( nIdFormResponse, FormResponse.RESOURCE_TYPE, nIdAction, request,
-                    locale, null );
-
-            Map<String, Object> model = new LinkedHashMap<>( );
-            model.put( MARK_ID_FORM_RESPONSE, String.valueOf( nIdFormResponse ) );
-            model.put( MARK_ID_ACTION, String.valueOf( nIdAction ) );
-            model.put( MARK_TASK_FORM, strHtmlTasksForm );
-            model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_SAVE_TASK_FORM ) );
-
-            XPage xPage = getXPage( TEMPLATE_TASK_FORM_RESPONSE, locale, model );
-            xPage.setTitle( I18nService.getLocalizedString( MESSAGE_FORM_RESPONSE_PAGETITLE, locale ) );
-            xPage.setPathLabel( I18nService.getLocalizedString( MESSAGE_FORM_RESPONSE_PATHLABEL, locale ) );
-
-            return xPage;
-        }
-
-        try
-        {
-            workflowService.doProcessAction( nIdFormResponse, FormResponse.RESOURCE_TYPE, nIdAction, formResponse.getFormId( ), request, locale, false, user );
-        }
-        catch( AppException e )
-        {
-            AppLogService.error( "Error processing action for id response '" + nIdFormResponse + "' - cause : " + e.getMessage( ), e );
-        }
-        // Redirect to the correct view
-        return redirect( request, VIEW_FORM_RESPONSE, FormsConstants.PARAMETER_ID_RESPONSE, nIdFormResponse );
-    }
-
-    /**
-     * Process workflow action
-     *
-     * @param request
-     *            The Http request
-     * @return The Jsp URL of the process result
-     * @throws AccessDeniedException
-     */
-    @fr.paris.lutece.portal.util.mvc.commons.annotations.Action( value = ACTION_SAVE_TASK_FORM )
-    public XPage doSaveTaskForm( HttpServletRequest request ) throws AccessDeniedException
-    {
-        int nIdFormResponse = NumberUtils.toInt( request.getParameter( FormsConstants.PARAMETER_ID_RESPONSE ), NumberUtils.INTEGER_MINUS_ONE );
-        int nIdAction = NumberUtils.toInt( request.getParameter( PARAMETER_ID_ACTION ), NumberUtils.INTEGER_MINUS_ONE );
-
-        LuteceUser user = SecurityService.getInstance( ).getRegisteredUser( request );
-        FormResponse formResponse = FormResponseHome.findByPrimaryKey( nIdFormResponse );
-
-        if ( formResponse == null || !FormsResponseUtils.isAuthorized(formResponse, user) )
-        {
-            return redirect( request, VIEW_FORM_RESPONSE, FormsConstants.PARAMETER_ID_RESPONSE, nIdFormResponse );
-        }
-
-        // CSRF Token control
-        if ( !SecurityTokenService.getInstance( ).validate( request, ACTION_SAVE_TASK_FORM ) )
-        {
-            throw new AccessDeniedException( MESSAGE_ERROR_TOKEN );
-        }
-
-        int nIdForm = formResponse.getFormId( );
-        Locale locale = getLocale( request );
-        WorkflowService workflowService = WorkflowService.getInstance( );
-
-        if ( workflowService.canProcessAction( nIdFormResponse, FormResponse.RESOURCE_TYPE, nIdAction, nIdForm, request, false, user ) )
-        {
-            try
-            {
-                String strError = workflowService.doSaveTasksForm( nIdFormResponse, FormResponse.RESOURCE_TYPE, nIdAction, nIdForm, request, locale, user );
-                if ( strError != null )
-                {
-                    return redirect( request, strError );
-                }
-            }
-            catch( AppException e )
-            {
-                AppLogService.error( "Error processing action for record " + nIdFormResponse, e );
-            }
-        }
-        else
-        {
-            addError( MESSAGE_ACTION_ERROR, locale );
-        }
-        return redirect( request, VIEW_FORM_RESPONSE, FormsConstants.PARAMETER_ID_RESPONSE, nIdFormResponse );
-    }
-
-    private Collection<Action> getActionsForUser( HttpServletRequest request, FormResponse formResponse )
-    {
-        LuteceUser user = SecurityService.getInstance( ).getRegisteredUser( request );
-        if (formResponse != null)
-        {
-            Form form = FormHome.findByPrimaryKey( formResponse.getFormId( ) );
-            if (FormsResponseUtils.isAuthorized(formResponse, SecurityService.getInstance( ).getRegisteredUser( request ), form ))
-            {
-                WorkflowService workflowService = WorkflowService.getInstance( );
-                boolean workflowEnabled = workflowService.isAvailable( ) && ( form.getIdWorkflow( ) != FormsConstants.DEFAULT_ID_VALUE );
-
-                if ( workflowEnabled )
-                {
-                    return workflowService.getActions( formResponse.getId( ), FormResponse.RESOURCE_TYPE, form.getIdWorkflow( ), (User) user );
-                }
-            }
-        }
-        return new ArrayList<>( );
-    }
-
-    /**
-     * Finds the formResponse from the specified request
-     *
-     * @param request
-     *            the request
-     * @return the found formResponse, or {@code null} if not found
-     * @throws FormResponseNotFoundException
-     *             if the form is not found
-     * @throws SiteMessageException
-     *             if the formResponse is not accessible
-     */
-    private FormResponse findFormResponseFrom( HttpServletRequest request ) throws SiteMessageException
-    {
-        FormResponse formResponse = null;
-        int nIdFormResponse = NumberUtils.toInt( request.getParameter( FormsConstants.PARAMETER_ID_RESPONSE ), FormsConstants.DEFAULT_ID_VALUE );
-
-        if ( nIdFormResponse != FormsConstants.DEFAULT_ID_VALUE )
-        {
-            formResponse = FormResponseHome.findByPrimaryKey( nIdFormResponse );
-        }
-        else
-        {
-            SiteMessageService.setMessage( request, MESSAGE_ERROR_NOT_FOUND_FORM_RESPONSE, SiteMessage.TYPE_ERROR );
-        }
-
-        if ( formResponse == null )
-        {
-            SiteMessageService.setMessage( request, MESSAGE_ERROR_NOT_FOUND_FORM_RESPONSE, SiteMessage.TYPE_ERROR );
-        }
-        else if ( !formResponse.isPublished( ) && !FormsResponseUtils.isAuthorized(formResponse, SecurityService.getInstance( ).getRegisteredUser( request ) ) )
-        {
-            SiteMessageService.setMessage( request, MESSAGE_ERROR_NOT_PUBLISHED_FORM_RESPONSE, SiteMessage.TYPE_ERROR );
-        }
-
-        return formResponse;
-    }
-
-    private List<Response> findResponses(List<FormQuestionResponse> listFormQuestionResponse )
-    {
-        List<Response> listResponse = new ArrayList<>( );
-
-        if ( listFormQuestionResponse != null )
-        {
-            for ( FormQuestionResponse formQuestionResponse : listFormQuestionResponse )
-            {
-                listResponse.addAll(formQuestionResponse.getEntryResponse( ));
-            }
-        }
-
-        return listResponse;
-    }
 }
