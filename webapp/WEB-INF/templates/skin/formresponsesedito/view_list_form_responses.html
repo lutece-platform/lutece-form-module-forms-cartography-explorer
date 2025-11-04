@@ -22,12 +22,16 @@
 </#if>
 
 <div id="result-list">
-    <form name="search" method="post" action="${urlPaginator}">
-        <div class="input-group mb-3">
-            <@NbItemsPerPageSelectorCombo nb_items_per_page?string />
-            <button class="btn btn-outline-primary btn-sm" type="submit" id="btn_items_per_page">#i18n{portal.admin.message.buttonValidate}</button>
-        </div>
-    </form>
+    <div class="d-flex justify-content-end mb-3">
+        <form name="search" method="post" action="${urlPaginator}">
+            <div class="input-group mb-3">
+                <select name="items_per_page" id="items_per_page"  class="form-control form-select" title="#i18n{portal.search.search_results.labelNbDocsPerPage}">
+                <#list [ "10" , "20" , "50" , "100" ] as nb><#if nb_items_per_page = nb ><option selected="selected" value="${nb}">${nb}</option><#else><option value="${nb}">${nb}</option></#if></#list>
+                </select>
+                <button class="btn btn-outline-primary btn-sm" type="submit" id="btn_items_per_page">#i18n{portal.admin.message.buttonValidate}</button>
+            </div>
+        </form>
+    </div>
     <div class="row row-cols-md-2 row-cols-lg-3 g-3 mb-5">
     <#list listFormResponsePaginator as formRep>
         <div class="col" style="height: 300px;">
