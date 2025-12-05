@@ -1,3 +1,6 @@
+-- liquibase formatted sql
+-- changeset core:init_core_formresponsxpage.sql
+-- preconditions onFail:MARK_RAN onError:WARN
 
 --
 -- Data for table core_admin_right
