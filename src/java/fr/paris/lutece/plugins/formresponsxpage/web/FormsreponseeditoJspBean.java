@@ -35,28 +35,18 @@
  
 package fr.paris.lutece.plugins.formresponsxpage.web;
 
-import fr.paris.lutece.portal.service.message.AdminMessage;
-import fr.paris.lutece.portal.service.message.AdminMessageService;
 import fr.paris.lutece.portal.service.security.SecurityTokenService;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
 import fr.paris.lutece.portal.service.util.AppException;
-import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import fr.paris.lutece.portal.util.mvc.admin.MVCAdminJspBean;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
-import fr.paris.lutece.util.url.UrlItem;
-import fr.paris.lutece.util.html.AbstractPaginator;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang3.StringUtils;
 
 
 import fr.paris.lutece.plugins.formresponsxpage.business.Formsreponseedito;
@@ -66,133 +56,41 @@ import fr.paris.lutece.plugins.formresponsxpage.business.FormsreponseeditoHome;
  * This class provides the user interface to manage Formsreponseedito features ( manage, create, modify, remove )
  */
 @Controller( controllerJsp = "ManageFormsreponseeditos.jsp", controllerPath = "jsp/admin/plugins/formresponsxpage/", right = "FORMRESPONSXPAGE_MANAGEMENT" )
-public class FormsreponseeditoJspBean extends AbstractJspBean <Integer, Formsreponseedito>
+public class FormsreponseeditoJspBean extends MVCAdminJspBean
 {
 
 	// Rights
 	public static final String RIGHT_MANAGEADMINRESPONSEEDITO = "FORMRESPONSXPAGE_MANAGEMENT";
 		
     // Templates
-    private static final String TEMPLATE_MANAGE_FORMSREPONSEEDITOS = "/admin/plugins/formresponsxpage/manage_formsreponseeditos.html";
     private static final String TEMPLATE_MODIFY_FORMSREPONSEEDITO = "/admin/plugins/forms/modules/formresponseexplorer/modify_formsreponseedito.html";
 
     // Parameters
     private static final String PARAMETER_ID_FORMSREPONSEEDITO = "id";
 
     // Properties for page titles
-    private static final String PROPERTY_PAGE_TITLE_MANAGE_FORMSREPONSEEDITOS = "formresponsxpage.manage_formsreponseeditos.pageTitle";
     private static final String PROPERTY_PAGE_TITLE_MODIFY_FORMSREPONSEEDITO = "formresponsxpage.modify_formsreponseedito.pageTitle";
-    private static final String PROPERTY_PAGE_TITLE_CREATE_FORMSREPONSEEDITO = "formresponsxpage.create_formsreponseedito.pageTitle";
 
     // Markers
-    private static final String MARK_FORMSREPONSEEDITO_LIST = "formsreponseedito_list";
     private static final String MARK_FORMSREPONSEEDITO = "formsreponseedito";
-
-    private static final String JSP_MANAGE_FORMSREPONSEEDITOS = "jsp/admin/plugins/formresponsxpage/ManageFormsreponseeditos.jsp";
-
-    // Properties
-    private static final String MESSAGE_CONFIRM_REMOVE_FORMSREPONSEEDITO = "formresponsxpage.message.confirmRemoveFormsreponseedito";
 
     // Validations
     private static final String VALIDATION_ATTRIBUTES_PREFIX = "formresponsxpage.model.entity.formsreponseedito.attribute.";
 
     // Views
-    private static final String VIEW_MANAGE_FORMSREPONSEEDITOS = "manageFormsreponseeditos";
-    private static final String VIEW_CREATE_FORMSREPONSEEDITO = "createFormsreponseedito";
     private static final String VIEW_MODIFY_FORMSREPONSEEDITO = "modifyFormsreponseedito";
 
     // Actions
-    private static final String ACTION_CREATE_FORMSREPONSEEDITO = "createFormsreponseedito";
     private static final String ACTION_MODIFY_FORMSREPONSEEDITO = "modifyFormsreponseedito";
-    private static final String ACTION_REMOVE_FORMSREPONSEEDITO = "removeFormsreponseedito";
-    private static final String ACTION_CONFIRM_REMOVE_FORMSREPONSEEDITO = "confirmRemoveFormsreponseedito";
 
     // Infos
-    private static final String INFO_FORMSREPONSEEDITO_CREATED = "formresponsxpage.info.formsreponseedito.created";
     private static final String INFO_FORMSREPONSEEDITO_UPDATED = "formresponsxpage.info.formsreponseedito.updated";
-    private static final String INFO_FORMSREPONSEEDITO_REMOVED = "formresponsxpage.info.formsreponseedito.removed";
     
     // Errors
     private static final String ERROR_RESOURCE_NOT_FOUND = "Resource not found";
     
     // Session variable to store working values
     private Formsreponseedito _formsreponseedito;
-    private List<Integer> _listIdFormsreponseeditos;
-    private HashMap<String,String> _mapFilterCriteria = new HashMap<>();
-    private String _optionOrderBy;
-    
-    /**
-     * Build the Manage View
-     * @param request The HTTP request
-     * @return The page
-     */
-    @View( value = VIEW_MANAGE_FORMSREPONSEEDITOS )
-    public String getManageFormsreponseeditos( HttpServletRequest request )
-    {
-        _formsreponseedito = null;
-        
-        // new search only if in pagination mode
-        if ( request.getParameter( AbstractPaginator.PARAMETER_PAGE_INDEX) == null )
-        {
-        	// if sorting request : new search with the existing filter criteria, ordered 
-        	// example of order by parameter : orderby=name
-        	if ( StringUtils.isNotBlank( (String)request.getParameter(PARAMETER_SEARCH_ORDER_BY) ) )
-        	{
-        		
-        		String strOrderByColumn =  (String)request.getParameter(PARAMETER_SEARCH_ORDER_BY);
-        		String strSortMode = getSortMode(); 
-        		
-        		_listIdFormsreponseeditos = FormsreponseeditoHome.getIdFormsreponseeditosList( _mapFilterCriteria, strOrderByColumn, strSortMode );
-               	
-	       	}
-	       	else
-	       	{
-	       		// reload the filter criteria and search
-	       		_mapFilterCriteria = (HashMap<String, String>) getFilterCriteriaFromRequest( request );
-	       		_listIdFormsreponseeditos = FormsreponseeditoHome.getIdFormsreponseeditosList( _mapFilterCriteria, null ,null);
-	       	}
-        	
-        	//set CurrentPageIndex of Paginator to null in aim of displays the first page of results
-        	resetCurrentPageIndexOfPaginator();
-        }
-       	
-       	Map<String, Object> model = getPaginatedListModel( request, MARK_FORMSREPONSEEDITO_LIST, _listIdFormsreponseeditos, JSP_MANAGE_FORMSREPONSEEDITOS );
-             
-        addSearchParameters(model,_mapFilterCriteria); //allow the persistence of search values in inputs search bar inputs
-                     
-        return getPage( PROPERTY_PAGE_TITLE_MANAGE_FORMSREPONSEEDITOS, TEMPLATE_MANAGE_FORMSREPONSEEDITOS, model );
-
-    }
-
-	/**
-     * Get Items from Ids list
-     * @param listIds
-     * @return the populated list of items corresponding to the id List
-     */
-	@Override
-	List<Formsreponseedito> getItemsFromIds( List<Integer> listIds ) 
-	{
-		List<Formsreponseedito> listFormsreponseedito = FormsreponseeditoHome.getFormsreponseeditosListByIds( listIds );
-		
-		// keep original order
-        return listFormsreponseedito.stream()
-                 .sorted(Comparator.comparingInt( notif -> listIds.indexOf( notif.getId())))
-                 .collect(Collectors.toList());
-	}
-	
-	@Override
-	int getPluginDefaultNumberOfItemPerPage( ) {
-		return AppPropertiesService.getPropertyInt( PROPERTY_DEFAULT_LIST_ITEM_PER_PAGE, 50 );
-	}
-    
-    /**
-    * reset the _listIdFormsreponseeditos list
-    */
-    public void resetListId( )
-    {
-    	_listIdFormsreponseeditos = new ArrayList<>( );
-    }
-    
     
     /**
      * Returns the form to update info about a formsreponseedito
@@ -246,7 +144,6 @@ public class FormsreponseeditoJspBean extends AbstractJspBean <Integer, Formsrep
 
         FormsreponseeditoHome.update( _formsreponseedito );
         addInfo( INFO_FORMSREPONSEEDITO_UPDATED, getLocale(  ) );
-        resetListId( );
 
         return redirectView( request, VIEW_MODIFY_FORMSREPONSEEDITO );
     }
