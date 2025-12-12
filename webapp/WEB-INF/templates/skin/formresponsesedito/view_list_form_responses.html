@@ -101,7 +101,7 @@ document.getElementsByTagName("head")[0].appendChild(loadresource);
 <script src="js/plugins/leaflet/leaflet/leaflet.markercluster.js"></script>
 
 <script>
-$(window).on('load', function () {
+window.addEventListener('load', function () {
 var map = L.map('map').setView([48.85632, 2.33272], 12);
 var points = [
             <#list points as point>
@@ -255,19 +255,23 @@ L.control.layers(baseMaps, overlayMaps).addTo(map);
 <#if points?? && (points?size > 0)>
 <script>
     // Bouton Liste - Affiche la liste et cache la carte
-    $('#btn-list').on('click', function () {
-        $('#result-list').show();
-        $('#map-wrapper').hide();
-        $('#btn-map').removeClass("active");
-        $(this).addClass("active");
+    const btnList = document.getElementById('btn-list');
+    const btnMap = document.getElementById('btn-map');
+    const resultList = document.getElementById('result-list');
+    const mapWrapper = document.getElementById('map-wrapper');
+
+    btnList.addEventListener('click', function () {
+        resultList.style.display = 'block';
+        mapWrapper.style.display = 'none';
+        btnMap.classList.remove('active');
+        btnList.classList.add('active');
     });
-    
-    // Bouton Carte - Affiche la carte et cache la liste
-    $('#btn-map').on('click', function () {
-        $('#result-list').hide();
-        $('#map-wrapper').show();
-        $('#btn-list').removeClass("active");
-        $(this).addClass("active");
+
+    btnMap.addEventListener('click', function () {
+        resultList.style.display = 'none';
+        mapWrapper.style.display = 'block';
+        btnList.classList.remove('active');
+        btnMap.classList.add('active');
         // Send event to resize Map and center it
         setTimeout(function() {
             window.dispatchEvent(new Event('resize'));
@@ -275,7 +279,7 @@ L.control.layers(baseMaps, overlayMaps).addTo(map);
     });
 </script>
   
-<div id='map-wrapper' class='map-absolute' style="display: none">
+<div id="map-wrapper" class="map-absolute" style="display: none">
     <div id="map" style="height: 400px; width: 100%"></div>
 </div>
 </#if> 
