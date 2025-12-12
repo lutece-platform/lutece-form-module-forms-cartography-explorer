@@ -35,7 +35,6 @@ package fr.paris.lutece.plugins.formresponsxpage.business;
 
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -60,8 +59,6 @@ public abstract class AbstractFilterDao {
 	private final static String SQL_EQUAL =" = ? ";
 	private final static String SQL_LIKE =" LIKE ? ";
 	private final static String SQL_AND = " AND ";
-	private final static String SQL_ASC =" ASC ";
-	private final static String SQL_DESC =" DESC ";
 	
 	//types only allowed for research
 	protected final static String TYPE_DATE = "Date";
