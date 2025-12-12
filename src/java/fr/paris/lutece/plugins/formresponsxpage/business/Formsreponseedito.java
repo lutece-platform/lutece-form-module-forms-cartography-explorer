@@ -33,8 +33,6 @@
  */
 package fr.paris.lutece.plugins.formresponsxpage.business;
 
-import javax.validation.constraints.Size;
-import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
 /**
  * This is the business class for the object Formsreponseedito

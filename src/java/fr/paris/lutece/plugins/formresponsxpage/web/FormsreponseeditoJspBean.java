@@ -35,27 +35,31 @@
  
 package fr.paris.lutece.plugins.formresponsxpage.web;
 
-import fr.paris.lutece.portal.service.security.SecurityTokenService;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.util.mvc.admin.MVCAdminJspBean;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
+import fr.paris.lutece.portal.util.mvc.binding.BindingResult;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
+import fr.paris.lutece.portal.util.mvc.commons.annotations.ModelAttribute;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
+import fr.paris.lutece.portal.util.mvc.utils.MVCUtils;
+import fr.paris.lutece.portal.web.cdi.mvc.Models;
 
-import java.util.Map;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-
-
-
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import fr.paris.lutece.plugins.formresponsxpage.business.Formsreponseedito;
 import fr.paris.lutece.plugins.formresponsxpage.business.FormsreponseeditoHome;
 
 /**
  * This class provides the user interface to manage Formsreponseedito features ( manage, create, modify, remove )
  */
-@Controller( controllerJsp = "ManageFormsreponseeditos.jsp", controllerPath = "jsp/admin/plugins/formresponsxpage/", right = "FORMRESPONSXPAGE_MANAGEMENT" )
+@RequestScoped
+@Named
+@Controller( controllerJsp = "ManageFormsreponseeditos.jsp", controllerPath = "jsp/admin/plugins/formresponsxpage/", right = "FORMRESPONSXPAGE_MANAGEMENT", securityTokenEnabled = true )
 public class FormsreponseeditoJspBean extends MVCAdminJspBean
 {
 
@@ -65,17 +69,11 @@ public class FormsreponseeditoJspBean extends MVCAdminJspBean
     // Templates
     private static final String TEMPLATE_MODIFY_FORMSREPONSEEDITO = "/admin/plugins/forms/modules/formresponseexplorer/modify_formsreponseedito.html";
 
-    // Parameters
-    private static final String PARAMETER_ID_FORMSREPONSEEDITO = "id";
-
     // Properties for page titles
     private static final String PROPERTY_PAGE_TITLE_MODIFY_FORMSREPONSEEDITO = "formresponsxpage.modify_formsreponseedito.pageTitle";
 
     // Markers
     private static final String MARK_FORMSREPONSEEDITO = "formsreponseedito";
-
-    // Validations
-    private static final String VALIDATION_ATTRIBUTES_PREFIX = "formresponsxpage.model.entity.formsreponseedito.attribute.";
 
     // Views
     private static final String VIEW_MODIFY_FORMSREPONSEEDITO = "modifyFormsreponseedito";
@@ -89,8 +87,8 @@ public class FormsreponseeditoJspBean extends MVCAdminJspBean
     // Errors
     private static final String ERROR_RESOURCE_NOT_FOUND = "Resource not found";
     
-    // Session variable to store working values
-    private Formsreponseedito _formsreponseedito;
+    @Inject
+    private Models _model;
     
     /**
      * Returns the form to update info about a formsreponseedito
@@ -101,21 +99,10 @@ public class FormsreponseeditoJspBean extends MVCAdminJspBean
     @View( value = VIEW_MODIFY_FORMSREPONSEEDITO, defaultView = true )
     public String getModifyFormsreponseedito( HttpServletRequest request )
     {
-        //int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_FORMSREPONSEEDITO ) );
-    	int nId = 1;
+        Formsreponseedito formsreponseedito = FormsreponseeditoHome.findByPrimaryKey( 1 ).orElseThrow( ( ) -> new AppException(ERROR_RESOURCE_NOT_FOUND ) );
+        _model.put( MARK_FORMSREPONSEEDITO, formsreponseedito );
 
-        if ( _formsreponseedito == null || ( _formsreponseedito.getId(  ) != nId ) )
-        {
-            Optional<Formsreponseedito> optFormsreponseedito = FormsreponseeditoHome.findByPrimaryKey( nId );
-            _formsreponseedito = optFormsreponseedito.orElseThrow( ( ) -> new AppException(ERROR_RESOURCE_NOT_FOUND ) );
-        }
-
-
-        Map<String, Object> model = getModel(  );
-        model.put( MARK_FORMSREPONSEEDITO, _formsreponseedito );
-        model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_MODIFY_FORMSREPONSEEDITO ) );
-
-        return getPage( PROPERTY_PAGE_TITLE_MODIFY_FORMSREPONSEEDITO, TEMPLATE_MODIFY_FORMSREPONSEEDITO, model );
+        return getPage( PROPERTY_PAGE_TITLE_MODIFY_FORMSREPONSEEDITO, TEMPLATE_MODIFY_FORMSREPONSEEDITO, _model );
     }
 
     /**
@@ -125,24 +112,17 @@ public class FormsreponseeditoJspBean extends MVCAdminJspBean
      * @return The Jsp URL of the process result
      * @throws AccessDeniedException
      */
-    @Action( ACTION_MODIFY_FORMSREPONSEEDITO )
-    public String doModifyFormsreponseedito( HttpServletRequest request ) throws AccessDeniedException
+    @Action( value = ACTION_MODIFY_FORMSREPONSEEDITO, securityTokenDisabled = true )
+    public String doModifyFormsreponseedito( @Valid @ModelAttribute Formsreponseedito formsreponseedito, BindingResult bindingResult, HttpServletRequest request ) throws AccessDeniedException
     {   
-        populate( _formsreponseedito, request, getLocale( ) );
-		
-		
-        if ( !SecurityTokenService.getInstance( ).validate( request, ACTION_MODIFY_FORMSREPONSEEDITO ) )
-        {
-            throw new AccessDeniedException ( "Invalid security token" );
-        }
-
-        // Check constraints
-        if ( !validateBean( _formsreponseedito, VALIDATION_ATTRIBUTES_PREFIX ) )
-        {
-            return redirect( request, VIEW_MODIFY_FORMSREPONSEEDITO, PARAMETER_ID_FORMSREPONSEEDITO, _formsreponseedito.getId( ) );
-        }
-
-        FormsreponseeditoHome.update( _formsreponseedito );
+    	if( bindingResult.isFailed( ) )
+    	{
+    		_model.put( MVCUtils.MARK_ERRORS, bindingResult.getAllErrors( ) );
+    		_model.put( MARK_FORMSREPONSEEDITO, formsreponseedito );
+    		return getPage( PROPERTY_PAGE_TITLE_MODIFY_FORMSREPONSEEDITO, TEMPLATE_MODIFY_FORMSREPONSEEDITO, _model );
+    	}
+    	
+    	FormsreponseeditoHome.update( formsreponseedito );
         addInfo( INFO_FORMSREPONSEEDITO_UPDATED, getLocale(  ) );
 
         return redirectView( request, VIEW_MODIFY_FORMSREPONSEEDITO );

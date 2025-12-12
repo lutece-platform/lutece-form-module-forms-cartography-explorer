@@ -6,7 +6,6 @@
     <@tform class="form-horizontal" method="post" name="formsreponseedito" action="jsp/admin/plugins/formresponsxpage/ManageFormsreponseeditos.jsp" >
 			<@messages errors=errors />
 			<@input type="hidden" id="id" name="id" value="${formsreponseedito.id}"/>
-			<@input type="hidden" value="${token}" name="token" />
 			
 			<@formGroup labelFor='labelrichtext_un' labelKey='#i18n{formresponsxpage.formsreponseedito.labelLabelrichtextUn}' mandatory=true>
 				<@input type='textarea' rows=15 cols=70 richtext=true id='labelrichtext_un' name='labelrichtext_un'  value=formsreponseedito.labelrichtextUn!'' />

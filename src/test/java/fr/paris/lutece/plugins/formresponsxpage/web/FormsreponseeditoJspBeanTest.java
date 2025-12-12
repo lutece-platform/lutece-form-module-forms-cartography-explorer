@@ -35,14 +35,21 @@
 package fr.paris.lutece.plugins.formresponsxpage.web;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
+import org.junit.jupiter.api.Test;
 
+
+import fr.paris.lutece.test.mocks.MockHttpServletRequest;
+import fr.paris.lutece.test.mocks.MockHttpServletResponse;
+import jakarta.inject.Inject;
+import fr.paris.lutece.portal.business.right.Right;
 import fr.paris.lutece.portal.business.user.AdminUser;
+import fr.paris.lutece.portal.business.user.AdminUserHome;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
 import fr.paris.lutece.portal.service.admin.AdminAuthenticationService;
-import fr.paris.lutece.portal.service.security.SecurityTokenService;
 import fr.paris.lutece.portal.service.security.UserNotSignedException;
 import fr.paris.lutece.test.LuteceTestCase;
 /**
@@ -50,49 +57,61 @@ import fr.paris.lutece.test.LuteceTestCase;
  */
 public class FormsreponseeditoJspBeanTest extends LuteceTestCase
 {
-    private static final String LABELRICHTEXTUN1 = "LabelrichtextUn1";
-    private static final String LABELRICHTEXTUN2 = "LabelrichtextUn2";
-    private static final String LABELRICHTEXTDEUX1 = "LabelrichtextDeux1";
-    private static final String LABELRICHTEXTDEUX2 = "LabelrichtextDeux2";
+    private static final String NEW_LABELRICHTEXTUN = "NewLabelrichtextUn";
+    private static final String NEW_LABELRICHTEXTDEUX = "NewLabelrichtextDeux2";
 
+    private static final String ATTRIBUTE_ADMIN_USER = "lutece_admin_user";
+    
+    @Inject
+    private FormsreponseeditoJspBean _jspbean;
+    
+    @Test
     public void testJspBean(  ) throws AccessDeniedException, IOException
-	{				
-		//display modify Formsreponseedito JSP
-		MockHttpServletRequest request = new MockHttpServletRequest();
-		MockHttpServletResponse response = new MockHttpServletResponse();
-        request.addParameter( "labelrichtext_un" , LABELRICHTEXTUN1 );
-        request.addParameter( "labelrichtext_deux" , LABELRICHTEXTDEUX1 );
+	{
+    	MockHttpServletRequest request = new MockHttpServletRequest( );
+    	MockHttpServletResponse response = new MockHttpServletResponse();
 
-        FormsreponseeditoJspBean jspbean = new FormsreponseeditoJspBean();
-		
-		assertNotNull( jspbean.getModifyFormsreponseedito( request ) );	
+    	//display modify Formsreponseedito JSP
+		AdminUser user = AdminUserHome.findUserByLogin( "admin" );
+		user.setRoles( AdminUserHome.getRolesListForUser( user.getUserId( ) ) );
+        Map<String, Right> mapRights = new HashMap<>( );
+        Right right = new Right( );
+        right.setId( FormsreponseeditoJspBean.RIGHT_MANAGEADMINRESPONSEEDITO );
+        mapRights.put( FormsreponseeditoJspBean.RIGHT_MANAGEADMINRESPONSEEDITO, right );
+        user.setRights( mapRights );
+        user.setLocale( new Locale("fr", "FR", "") );
+        request.getSession( true ).setAttribute( ATTRIBUTE_ADMIN_USER, user );
 
-		//action modify Formsreponseedito JSP
+        _jspbean.init( request, FormsreponseeditoJspBean.RIGHT_MANAGEADMINRESPONSEEDITO );
+
+		assertNotNull( _jspbean.getModifyFormsreponseedito( request ) );
+    	
+    	//action modify Formsreponseedito JSP
 		request = new MockHttpServletRequest();
 		response = new MockHttpServletResponse();		
 		
-        request.addParameter( "labelrichtext_un" , LABELRICHTEXTUN2 );
-        request.addParameter( "labelrichtext_deux" , LABELRICHTEXTDEUX2 );
+        request.addParameter( "labelrichtext_un" , NEW_LABELRICHTEXTUN );
+        request.addParameter( "labelrichtext_deux" , NEW_LABELRICHTEXTDEUX );
 		request.addParameter("action","modifyFormsreponseedito");
-		request.addParameter( "token", SecurityTokenService.getInstance( ).getToken( request, "modifyFormsreponseedito" ));
 
 		try 
 		{
 			AdminUser adminUser = new AdminUser( );
 			adminUser.setAccessCode( "admin" );
 			AdminAuthenticationService.getInstance( ).registerUser(request, adminUser);
-			String html = jspbean.processController( request, response );
+			String html = _jspbean.processController( request, response );
 
 			// MockResponse object does not redirect, result is always null
 			assertNull( html );
 		}
 		catch (AccessDeniedException e)
-		{
+		{ 
 			fail("access denied");
 		}
 		catch (UserNotSignedException e) 
 		{
 			fail("user not signed in");
-		}	
-     }
+		}
+    
+	}
 }

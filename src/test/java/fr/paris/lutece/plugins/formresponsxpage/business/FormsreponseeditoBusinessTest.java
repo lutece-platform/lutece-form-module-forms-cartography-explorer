@@ -38,6 +38,8 @@ import fr.paris.lutece.test.LuteceTestCase;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.Test;
+
 
 /**
  * This is the business class test for the object Formsreponseedito
@@ -52,6 +54,7 @@ public class FormsreponseeditoBusinessTest extends LuteceTestCase
 	/**
 	* test Formsreponseedito
 	*/
+    @Test
     public void testBusiness(  )
     {
         // Initialize an object
@@ -61,10 +64,11 @@ public class FormsreponseeditoBusinessTest extends LuteceTestCase
 
         // Create test
         FormsreponseeditoHome.create( formsreponseedito );
+        
         Optional<Formsreponseedito> optFormsreponseeditoStored = FormsreponseeditoHome.findByPrimaryKey( formsreponseedito.getId( ) );
         Formsreponseedito formsreponseeditoStored = optFormsreponseeditoStored.orElse( new Formsreponseedito ( ) );
-        assertEquals( formsreponseeditoStored.getLabelrichtextUn( ) , formsreponseedito.getLabelrichtextUn( ) );
-        assertEquals( formsreponseeditoStored.getLabelrichtextDeux( ) , formsreponseedito.getLabelrichtextDeux( ) );
+        assertEquals( formsreponseedito.getLabelrichtextUn( ), formsreponseeditoStored.getLabelrichtextUn( ) );
+        assertEquals( formsreponseedito.getLabelrichtextDeux( ), formsreponseeditoStored.getLabelrichtextDeux( ));
 
         // Update test
         formsreponseedito.setLabelrichtextUn( LABELRICHTEXTUN2 );
@@ -83,11 +87,7 @@ public class FormsreponseeditoBusinessTest extends LuteceTestCase
         FormsreponseeditoHome.remove( formsreponseedito.getId( ) );
         optFormsreponseeditoStored = FormsreponseeditoHome.findByPrimaryKey( formsreponseedito.getId( ) );
         formsreponseeditoStored = optFormsreponseeditoStored.orElse( null );
-        assertNull( formsreponseeditoStored );
-        
+        assertNull( formsreponseeditoStored );      
     }
-    
-    
-     
 
 }
